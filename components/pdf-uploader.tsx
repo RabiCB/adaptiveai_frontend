@@ -1,21 +1,31 @@
 "use client";
 
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Upload, CheckCircle2, X, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-import {  GlobalWorkerOptions } from "pdfjs-dist";
-
-GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
-).toString();
 interface PDFUploaderProps {
   setText: (text: string) => void;
   setIsLoading: (loading: boolean) => void;
+  complexity: string;
+  focus: string;
+  format: string;
+  maxLength: number;
+  setResult: (result: string) => void;
 }
 
-export function PDFUploader({ setText, setIsLoading }: PDFUploaderProps) {
+export function PDFUploader({ 
+  setText, 
+  setIsLoading, 
+  complexity,
+  focus, 
+  format,
+  maxLength,
+  setResult
+}: PDFUploaderProps) {
   const [fileName, setFileName] = useState("");
+  const [isUploaded, setIsUploaded] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState("");
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -28,48 +38,137 @@ export function PDFUploader({ setText, setIsLoading }: PDFUploaderProps) {
 
     setFileName(file.name);
     setIsLoading(true);
+    setIsUploaded(false);
+    setUploadProgress("Uploading PDF...");
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-
-      // ✅ Explicitly disable worker to avoid "No workerSrc" error
-      const loadingTask = pdfjsLib.getDocument({
-        data: arrayBuffer,
-        disableWorker: true
+      // Create FormData to send the file
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      setUploadProgress("Extracting text from PDF...");
+      
+      // Build query parameters with current settings
+      const params = new URLSearchParams({
+        complexity: complexity,
+        focus: focus,
+        format: format,
+        max_length: maxLength.toString()
       });
+      
+      // Send to FastAPI backend
+      const response = await fetch(
+        `http://localhost:8000/summarize-pdf?${params.toString()}`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
-      const pdf = await loadingTask.promise;
-
-      let extractedText = "";
-
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const strings = content.items.map((item: any) => item.str);
-        extractedText += strings.join(" ") + "\n\n";
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to process PDF");
       }
 
-      setText(extractedText.trim());
+      const data = await response.json();
+      
+      setUploadProgress("Summarizing content...");
+      
+      // Set the summary in the result area
+      setResult(data.summary);
+      
+      // Also store in text state for potential re-processing
+      setText(data.summary);
+      
+      setIsUploaded(true);
+      setUploadProgress("");
+      
     } catch (error) {
-      console.error("Error reading PDF:", error);
-      alert("Failed to extract text from PDF.");
+      console.error("Error processing PDF:", error);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to process PDF";
+      
+      alert(`Error: ${errorMessage}\n\nPlease ensure the PDF contains selectable text.`);
+      setFileName("");
+      setIsUploaded(false);
+      setUploadProgress("");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleClear = () => {
+    setFileName("");
+    setIsUploaded(false);
+    setText("");
+    setResult("");
+    setUploadProgress("");
+    // Reset the file input
+    const input = document.getElementById("pdf-upload") as HTMLInputElement;
+    if (input) input.value = "";
+  };
+
   return (
-    <div className="flex items-center gap-3">
-      <label className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-md border border-primary/30 bg-primary/5 text-primary text-sm hover:bg-primary/10">
-        <FileText className="w-4 h-4" />
-        {fileName || "Upload PDF"}
-        <input
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </label>
+    <div className="w-full space-y-3">
+      {/* Upload Button */}
+      {!fileName ? (
+        <label
+          htmlFor="pdf-upload"
+          className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl cursor-pointer hover:from-primary/90 hover:to-primary/80 transition-all duration-200 shadow-md hover:shadow-lg border border-primary/20"
+        >
+          <Upload className="w-5 h-5" />
+          <span className="font-medium">Upload PDF Document</span>
+        </label>
+      ) : (
+        /* File Info Card */
+        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/50 rounded-xl border border-border">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex-shrink-0">
+              {isUploaded ? (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              ) : uploadProgress ? (
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              ) : (
+                <FileText className="w-5 h-5 text-primary" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {fileName}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {isUploaded ? "Summarized successfully" : uploadProgress || "Processing..."}
+              </p>
+            </div>
+          </div>
+          
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClear}
+            className="flex-shrink-0 h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      <input
+        id="pdf-upload"
+        type="file"
+        accept="application/pdf"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
+      {/* Helper Text */}
+      {!fileName && (
+        <p className="text-xs text-center text-muted-foreground">
+          Supports PDF files • Will be automatically summarized using current settings
+        </p>
+      )}
     </div>
   );
 }

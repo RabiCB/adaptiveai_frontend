@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, X, Gauge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 
 interface AudioPlayerProps {
   text: string;
   isVisible: boolean;
+  onClose?: () => void;
 }
 
-export function AudioPlayer({ text, isVisible }: AudioPlayerProps) {
+export function AudioPlayer({ text, isVisible, onClose }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [speed, setSpeed] = useState(1);
@@ -149,6 +150,11 @@ export function AudioPlayer({ text, isVisible }: AudioPlayerProps) {
     if (utteranceRef.current) utteranceRef.current.volume = isMuted ? 1 : 0;
   };
 
+  const handleClose = () => {
+    stopSpeaking();
+    onClose?.();
+  };
+
   const formatTime = (progressPercent: number) => {
     const totalWords = wordsRef.current.length;
     const totalSeconds = totalWords / (2.5 * speed);
@@ -162,47 +168,111 @@ export function AudioPlayer({ text, isVisible }: AudioPlayerProps) {
   const time = formatTime(progress);
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-gray-400 text-black shadow-lg p-4 flex flex-col space-y-2">
-      {/* Progress bar */}
-      <Slider
-        value={[progress]}
-        onValueChange={handleSliderChange}
-        max={100}
-        step={0.1}
-        className="w-full accent-green-500"
-        aria-label="Playback progress"
-      />
-      <div className="flex justify-between text-xs text-gray-400">
-        <span>{time.current}</span>
-        <span>{time.total}</span>
-      </div>
-
-      {/* Controls */}
-      <div className="flex justify-center items-center gap-6 mt-2">
-        <Button variant="ghost" size="sm" onClick={handleMuteToggle}>
-          {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={handleSkipBack}>
-          <SkipBack className="w-6 h-6" />
-        </Button>
+    <div className="fixed bottom-0 left-0 right-0 z-50 animate-in slide-in-from-bottom duration-300">
+      {/* Backdrop blur */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/90 to-background/50 backdrop-blur-xl border-t border-border shadow-2xl" />
+      
+      <div className="relative max-w-4xl mx-auto px-6 py-5">
+        {/* Close Button */}
         <Button
-          size="lg"
-          onClick={handlePlayPause}
-          className="h-14 w-14 rounded-full bg-green-500 text-black flex items-center justify-center shadow-lg hover:bg-green-600"
+          variant="ghost"
+          size="icon"
+          onClick={handleClose}
+          className="absolute -top-2 right-4 h-8 w-8 rounded-full bg-muted/80 hover:bg-destructive/20 hover:text-destructive transition-colors"
+          aria-label="Close player"
         >
-          {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+          <X className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleSkipForward}>
-          <SkipForward className="w-6 h-6" />
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleSpeedChange}>
-          {speed}x
-        </Button>
-      </div>
 
-      {/* Word progress */}
-      <div className="text-center text-gray-400 text-xs mt-1">
-        Word {Math.min(currentWordIndex + 1, wordsRef.current.length)} of {wordsRef.current.length}
+        {/* Player Content */}
+        <div className="space-y-4">
+          {/* Progress Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-medium">
+              <span className="text-muted-foreground">{time.current}</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary">
+                <div className={`w-1.5 h-1.5 rounded-full ${isPlaying ? 'bg-primary animate-pulse' : 'bg-primary/50'}`} />
+                <span className="text-xs font-semibold">
+                  {Math.min(currentWordIndex + 1, wordsRef.current.length)} / {wordsRef.current.length} words
+                </span>
+              </div>
+              <span className="text-muted-foreground">{time.total}</span>
+            </div>
+            
+            <Slider
+              value={[progress]}
+              onValueChange={handleSliderChange}
+              max={100}
+              step={0.1}
+              className="w-full cursor-pointer [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border-2 [&_[role=slider]]:border-primary [&_[role=slider]]:bg-background [&_[role=slider]]:shadow-lg"
+              aria-label="Playback progress"
+            />
+          </div>
+
+          {/* Controls */}
+          <div className="flex justify-center items-center gap-3">
+            {/* Mute Button */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleMuteToggle}
+              className="h-10 w-10 rounded-full hover:bg-muted transition-colors"
+              aria-label={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? 
+                <VolumeX className="w-5 h-5 text-muted-foreground" /> : 
+                <Volume2 className="w-5 h-5 text-foreground" />
+              }
+            </Button>
+
+            {/* Skip Back */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleSkipBack}
+              className="h-11 w-11 rounded-full hover:bg-muted transition-colors"
+              aria-label="Skip back 10%"
+            >
+              <SkipBack className="w-5 h-5 fill-foreground" />
+            </Button>
+
+            {/* Play/Pause */}
+            <Button
+              size="icon"
+              onClick={handlePlayPause}
+              className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+              {isPlaying ? 
+                <Pause className="w-7 h-7 fill-primary-foreground" /> : 
+                <Play className="w-7 h-7 fill-primary-foreground ml-0.5" />
+              }
+            </Button>
+
+            {/* Skip Forward */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleSkipForward}
+              className="h-11 w-11 rounded-full hover:bg-muted transition-colors"
+              aria-label="Skip forward 10%"
+            >
+              <SkipForward className="w-5 h-5 fill-foreground" />
+            </Button>
+
+            {/* Speed Control */}
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={handleSpeedChange}
+              className="h-10 w-10 rounded-full border-2 hover:border-primary hover:bg-primary/10 transition-colors relative group"
+              aria-label={`Playback speed: ${speed}x`}
+            >
+              <Gauge className="w-4 h-4 absolute text-muted-foreground group-hover:text-primary transition-colors" />
+              <span className="text-xs font-bold mt-0.5">{speed}x</span>
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

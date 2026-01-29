@@ -1,0 +1,38 @@
+generator client {
+  provider   = "prisma-client-js"
+  output     = "./generated"
+  engineType = "Client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Status {
+  REFUNED
+  COMPLETED
+  CANCELLED
+  SHIPPED
+  DELIVERED
+  RETURNED
+}
+
+model User {
+  id             String   @id @default(cuid()) @map("_id")
+  username       String
+  email          String   @unique
+  hashedPassword String?
+  role           String?
+  imageUrl       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessions Session[]
+}
+
+model Session {
+  id        String   @id @map("_id")
+  userId    String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+}
