@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { AvatarImage } from "@radix-ui/react-avatar";
 
 interface HeaderProps {
   onSpeak: () => void;
@@ -94,11 +95,19 @@ export function Header({ onSpeak, isSpeaking, user }: HeaderProps) {
                   variant="ghost"
                   className="relative h-10 w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all"
                 >
-                  <Avatar  className="h-10 w-10 bg-gradient-to-br from-green-400 to-emerald-500 border-2 border-background">
-                    <AvatarFallback className="bg-transparent text-white font-bold text-base">
-                      {user?.username?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <Avatar className="h-10 w-10 bg-gradient-to-br  border-2 border-background">
+  {user?.picture && (
+    <AvatarImage
+      src={user.picture}
+      alt={user.username}
+      referrerPolicy="no-referrer"
+    />
+  )}
+
+  <AvatarFallback className="bg-transparent text-white from-green-400 to-emerald-500 font-bold text-base">
+    {user?.username?.charAt(0).toUpperCase()}
+  </AvatarFallback>
+</Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>

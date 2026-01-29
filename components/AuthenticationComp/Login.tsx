@@ -13,7 +13,7 @@ import { useAppContext } from '@/ContextProvider/AppContextProvider'
 import toast from 'react-hot-toast'
 import SignupWithGoogle from './SignupWithGoogle'
 import { Loader2, Mail, Lock } from 'lucide-react'
-import { signIn } from '@/app/auth/auth.action' // Import SignIn function
+import { getGoogleAuthUrl, signIn } from '@/app/auth/auth.action' // Import SignIn function
 
 
 export const loginSchema = z.object({
@@ -58,6 +58,10 @@ const Loginform = () => {
         }
     }
 
+
+     const handleGoogleSignIn = async () => {
+    router.push(`/api/auth/google`);
+  };
     return (
         <section className="w-full max-w-md border-0  shadow-none bg-transparent md:border md:shadow-lg md:bg-card md:rounded-2xl overflow-hidden">
   {/* Header */}

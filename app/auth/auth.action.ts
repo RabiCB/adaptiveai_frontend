@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { generateCodeVerifier, generateState } from "arctic";
 import { google } from "@/lib/googleAuthOptions";
 import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
 
 // -------------------- Signup --------------------
 export async function signup(values: z.infer<typeof formSchema>) {
@@ -117,39 +118,34 @@ export async function signIn(values: z.infer<typeof loginSchema>) {
 
 // -------------------- Get Google Auth URL --------------------
 export async function getGoogleAuthUrl() {
-  try {
-    const state = generateState();
+  const state = generateState();
     const codeVerifier = generateCodeVerifier();
-
-    const cookieStore = await cookies();
-    
-    cookieStore.set("google_oauth_state", state, {
-      path: "/",
-      secure: process.env.NODE_ENV === "production",
+  
+    const scopes = ["openid", "profile", "email"];
+    const url = await google.createAuthorizationURL(state, codeVerifier, scopes);
+  
+    const response = NextResponse.redirect(url);
+  
+  
+    console.log(response,"skskkskkskksks")
+    // 🔥 MUST be on response
+    response.cookies.set("google_oauth_state", state, {
       httpOnly: true,
-      maxAge: 60 * 10, // 10 minutes
       sameSite: "lax",
-    });
-
-    cookieStore.set("google_code_verifier", codeVerifier, {
+      secure: false, // localhost
       path: "/",
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 60 * 10,
-      sameSite: "lax",
+      maxAge: 600
     });
-
-    const authUrl = await google.createAuthorizationURL(state, codeVerifier, [
-        "openid",
-        "email",
-        "profile",
-    ]);
-
-    return { success: true, url: authUrl.toString() };
-  } catch (error) {
-    console.error("Google Auth URL error:", error);
-    return { success: false, error: "Failed to get Google auth URL" };
-  }
+  
+    response.cookies.set("google_code_verifier", codeVerifier, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      path: "/",
+      maxAge: 600
+    });
+  
+      return response;
 }
 
 

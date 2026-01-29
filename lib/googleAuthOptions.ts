@@ -1,5 +1,5 @@
-import {  Google} from "arctic";
+import * as arctic from "arctic";
 
-export const google= new Google(`826509858737-rf98jjjvhcp41s4knqefdcbb3c98mb4h.apps.googleusercontent.com`, `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`,"https://sheinshop.vercel.app/api/auth/google/callback");
+export const google=new arctic.Google(`114324796057-te0gqg6qp439m4bada4i4tipns3tbkjl.apps.googleusercontent.com`, `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`,`http://localhost:3000/api/auth/google/callback`);
 
 

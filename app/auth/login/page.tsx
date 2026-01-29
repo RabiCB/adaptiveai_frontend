@@ -21,16 +21,16 @@ export default function LoginPage() {
             <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center">
               <Shield className="h-5 w-5 text-foreground" />
             </div>
-            <span className="text-xl font-semibold text-background">Acme Inc</span>
+            <span className="text-xl font-semibold text-background">Adpative Read</span>
           </div>
 
           {/* Main Content */}
           <div className="space-y-8">
             <h1 className="text-4xl xl:text-5xl font-bold text-background leading-tight text-balance">
-              Build something amazing today
+              
             </h1>
             <p className="text-lg text-background/70 max-w-md leading-relaxed">
-              Join thousands of teams who trust our platform to power their most important work.
+              Join Our platform to read your content in your own way .
             </p>
 
             {/* Features */}
@@ -79,7 +79,7 @@ export default function LoginPage() {
               ))}
             </div>
             <blockquote className="text-background/90 text-lg italic">
-              &ldquo;This platform transformed how our team collaborates. We&apos;ve seen a 40% increase in productivity.&rdquo;
+              &ldquo;This platform helps people with vision impairments and people who doesn't want to read vast content on their own.&rdquo;
             </blockquote>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-background/20 flex items-center justify-center text-background font-medium">
