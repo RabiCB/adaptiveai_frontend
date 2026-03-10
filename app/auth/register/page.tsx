@@ -21,7 +21,7 @@ export default function RegisterPage() {
             <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center">
               <Shield className="h-5 w-5 text-foreground" />
             </div>
-            <span className="text-xl font-semibold text-background">Acme Inc</span>
+            <span className="text-xl font-semibold text-background">Adaptive Ai</span>
           </div>
 
           {/* Main Content */}

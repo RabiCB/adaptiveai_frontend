@@ -21,6 +21,11 @@ export function OutputDisplay({ result, mode, isLoading }: OutputDisplayProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+
+  const closeAudioPlayer=()=>{
+    setShowPlayer(false)
+  }
+
   const getModeLabel = () => {
     switch (mode) {
       case "summarize":
@@ -130,7 +135,7 @@ export function OutputDisplay({ result, mode, isLoading }: OutputDisplayProps) {
       </div>
 
       {/* Audio Player */}
-      <AudioPlayer text={result} isVisible={showPlayer} />
+      <AudioPlayer text={result} onClose={closeAudioPlayer} isVisible={showPlayer} />
     </div>
   );
 }
